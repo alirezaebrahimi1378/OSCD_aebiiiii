@@ -59,6 +59,7 @@ for root, cityname, files in os.walk(dataset_path, topdown=True):
         json_path = os.path.join(city_path , f'{cityname[i]}.geojson')
         date1 , date2 = get_dates('dates.txt')
         date1_path , date2_path = make_dirs(city_path)
+        print(city_path)
         download_cop(date1_path , json_path , date1)
         download_cop(date2_path , json_path , date2)
         break
