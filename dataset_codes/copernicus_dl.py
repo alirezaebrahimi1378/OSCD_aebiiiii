@@ -13,25 +13,12 @@ api = SentinelAPI('mantis98', '0123456789')
 def download_cop(dl_path,json_path , date ):
     os.chdir(dl_path)
     footprint = geojson_to_wkt(read_geojson(json_path))
-    query_params = {
-        'date': (date, str(int(date) + 1)),
-        'platformname': 'Sentinel-2',
-        'orbitdirection': 'DESCENDING',
-        'cloudcoverpercentage': (0, 20)
-    }
-    # Query the API and download products
-    products = api.query(footprint, **query_params)
+    products = api.query(footprint,
+                         date=(date, str(int(date) + 1)),
+                         platformname='Sentinel-2',
+                         orbitdirection='DESCENDING',
+                         cloudcoverpercentage=(0, 20))
     api.download_all(products)
-    # Convert products to a geodataframe
-    gdf = api.to_geodataframe(products)
-    # Load extent as a geodataframe and convert it to the same CRS as the products
-    extent_gdf = gpd.read_file(json_path)
-    extent_gdf = extent_gdf.to_crs(gdf.crs)
-    # Crop products by extent
-    cropped_gdf = gpd.overlay(gdf, extent_gdf, how='intersection')
-    # Download the cropped products
-    for index, row in cropped_gdf.iterrows():
-        api.download(row['uuid'])
 
 def get_dates(text):
     with open(text) as date_file:
