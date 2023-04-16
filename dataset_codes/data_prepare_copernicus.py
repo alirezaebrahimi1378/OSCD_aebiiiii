@@ -7,7 +7,7 @@ import rasterio as rio
 from rasterio.mask import mask
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
-class prepare_data:
+class prepare_data_copernicus:
     def __init__(self, root_path):
         self.root_path = root_path
         self.image_path = os.path.join(root_path, 'data/OSCD/images')
@@ -129,5 +129,5 @@ class prepare_data:
 
 os.chdir('..')
 root_path = os.getcwd()
-p1 = prepare_data(root_path)
+p1 = prepare_data_copernicus(root_path)
 p1.prepare()
