@@ -11,6 +11,12 @@ import cv2
 import re
 from rasterio.windows import Window
 
+
+def uint8(img):
+    image = (img / img.max())*256
+    image = image.astype('uint8')
+    return image
+
 class prepare_data_earthengine:
     def __init__(self, root_path , remove_small_chips):
         self.root_path = root_path                                                       # path to root path where all codes and datasets are
@@ -81,11 +87,11 @@ class prepare_data_earthengine:
             else:
                 with rio.open(file) as src:
                     arr = src.read(1)  # read the first band
+                    arr = uint8(arr)
                     arrs.append(np.expand_dims(arr, axis=0))  # add a new dimension for stacking
 
                 # stack the arrays from all input files into a single multi-band array
                 mosaic = np.vstack(arrs)
-
                 # update the metadata of the output TIFF
                 out_meta = src.meta.copy()
                 out_meta.update({"driver": "GTiff",
@@ -121,6 +127,8 @@ class prepare_data_earthengine:
         transform = image_main.transform
 
         mask_new = cv2.resize(mask, (y, x), interpolation=cv2.INTER_NEAREST).astype(int)
+        mask_new[mask_new == 1] = 0
+        mask_new[mask_new == 2] = 1
         os.chdir(self.mask_model_input_path)
         new_dataset = rio.open(f'CM_{index}.tif', 'w', driver='GTiff',
                                height=shape[0], width=shape[1],
@@ -156,7 +164,6 @@ class prepare_data_earthengine:
                     # Calculate the number of chips in each dimension
                     chips_x = (width + chip_size - 1) // chip_size
                     chips_y = (height + chip_size - 1) // chip_size
-
                     # Loop through each chip and extract it
                     for i in range(chips_x):
                         for j in range(chips_y):
@@ -167,12 +174,12 @@ class prepare_data_earthengine:
                             chip = src.read(window=window)
                             if remove_small_chips:
                                 if chip.shape[1] < 64 or chip.shape[2] < 64:
-                                    continue
-                            else:
-                                # Save the chip to the output directory
-                                chip_filename = os.path.splitext(filename)[0] + '_{}_{}.tif'.format(i, j)
-                                with rio.open(os.path.join(output_path, chip_filename), 'w', **meta) as dst:
-                                    dst.write(chip)
+                                    pass
+                                else:
+                                    # Save the chip to the output directory
+                                    chip_filename = os.path.splitext(filename)[0] + '_{}_{}.tif'.format(i, j)
+                                    with rio.open(os.path.join(output_path, chip_filename), 'w', **meta) as dst:
+                                        dst.write(chip)
 
     ######################################################################################################################
     # this function has all processes that will be applied to images in date1 and date2
@@ -208,5 +215,5 @@ class prepare_data_earthengine:
 
 os.chdir('..')
 root_path = os.getcwd()
-p1 = prepare_data_earthengine(root_path , remove_small_chips=False)
+p1 = prepare_data_earthengine(root_path , remove_small_chips=True)
 p1.prepare()
